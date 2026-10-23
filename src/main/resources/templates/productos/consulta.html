@@ -1,0 +1,101 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Consulta de Motocicletas - TiendaMotos_GC</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" th:href="@{/menu}">
+                <i class="fa-solid fa-motorcycle text-warning"></i> TiendaMotos_GC
+            </a>
+            <div class="d-flex align-items-center text-white">
+                <span class="me-3" th:if="${session.usuarioLogueado != null}">
+                    <i class="fa-solid fa-user-circle"></i> <span th:text="${session.usuarioLogueado.nombreCompleto}">Usuario</span>
+                </span>
+                <a th:href="@{/menu}" class="btn btn-outline-light btn-sm me-2"><i class="fa-solid fa-arrow-left"></i> Menú</a>
+                <a th:href="@{/logout}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-power-off"></i> Salir</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <!-- Tarjeta de Filtros de Búsqueda -->
+        <div class="card shadow border-0 mb-4">
+            <div class="card-header bg-info text-white fw-bold">
+                <i class="fa-solid fa-filter"></i> Filtros de Búsqueda de Motocicletas
+            </div>
+            <div class="card-body bg-white">
+                <form th:action="@{/productos/consulta}" th:object="${productoFilter}" method="get" class="row g-3 align-items-end">
+                    
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Nombre o Modelo de la Moto:</label>
+                        <input type="text" th:field="*{nombre}" class="form-control" placeholder="Ej. Pulsar, Honda, Yamaha..." />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Categoría:</label>
+                        <select th:field="*{idCategoria}" class="form-select">
+                            <option value="">-- Todas las Categorías --</option>
+                            <option th:each="c : ${categorias}" th:value="${c.idCategoria}" th:text="${c.nombre}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-info text-white w-100 fw-bold">
+                            <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Resultados -->
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white fw-bold">
+                <i class="fa-solid fa-list-check"></i> Resultados de la Consulta
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre / Modelo</th>
+                                <th>Categoría</th>
+                                <th>Precio Venta</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${productos}">
+                                <td class="fw-bold text-secondary" th:text="${p.idProducto}">1</td>
+                                <td class="fw-semibold text-start ps-4" th:text="${p.nombre}">Modelo Moto</td>
+                                <td>
+                                    <span class="badge bg-secondary" th:text="${p.categoria != null ? p.categoria.denominacion : 'N/A'}">Deportiva</span>
+                                </td>
+                                <td class="text-success fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(p.precio, 1, 2)}">S/ 0.00</td>
+                                <td>
+                                    <span class="badge bg-primary fs-6" th:text="${p.stock}">0</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(productos)}">
+                                <td colspan="5" class="text-muted py-4">No se encontraron motocicletas con los filtros seleccionados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

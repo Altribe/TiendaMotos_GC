@@ -1,0 +1,48 @@
+
+# Documentación generada
+HELP.md
+
+# Maven
+target/
+**/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Tools / Eclipse
+.metadata/
+**/.metadata/
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# Visual Studio Code
+.vscode/
+
+# Archivos temporales
+*.log
+*.class
+*.tmp
+*.bak
+
+# Configuraciones privadas
+.env
+.env.*
+application-local.properties
+**/application-local.properties

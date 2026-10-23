@@ -1,0 +1,344 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Emisión de Ventas - TiendaMotos_GC</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.0.3/css/dataTables.bootstrap5.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- jQuery y DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.3/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.0.3/js/dataTables.bootstrap5.js"></script>
+    <!-- jQuery Validate -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js"></script>
+</head>
+
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" th:href="@{/menu}">
+                <i class="fa-solid fa-motorcycle text-warning"></i> TiendaMotos_GC
+            </a>
+            <div class="d-flex align-items-center text-white">
+                <span class="me-3" th:if="${session.usuarioLogueado != null}">
+                    <i class="fa-solid fa-user-circle"></i> <span th:text="${session.usuarioLogueado.nombreCompleto}">Usuario</span>
+                </span>
+                <a th:href="@{/menu}" class="btn btn-outline-light btn-sm me-2"><i class="fa-solid fa-arrow-left"></i> Menú</a>
+                <a th:href="@{/logout}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-power-off"></i> Salir</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- Formulario Principal de Venta -->
+        <form id="formVenta" th:action="@{/ventas/registrar}" th:object="${venta}" method="post">
+            
+            <!-- Encabezado y Botón Registrar -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1 class="fw-bold m-0 text-primary"><i class="fa-solid fa-cash-register"></i> Emisión de Venta</h1>
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                        <strong>No se pudo completar la operación:</strong>
+                        <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                    <small class="text-muted">Procesamiento y facturación de motocicletas</small>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg shadow fw-bold">
+                    Registrar Venta <i class="fa-solid fa-floppy-disk ms-1"></i>
+                </button>
+            </div>
+
+            <!-- Tarjeta 1: Fecha y Datos del Cliente -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body bg-white rounded p-4">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold"><i class="fa-solid fa-calendar-days text-primary"></i> Fecha Emisión:</label>
+                            <input type="text" class="form-control bg-light fw-bold text-center" 
+                                   th:value="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}" readonly />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Tipo Documento:</label>
+                            <select th:field="*{tipoDocumento}" class="form-select" required>
+                                <option value="Boleta">Boleta</option>
+                                <option value="Factura">Factura</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">DNI / RUC Cliente:</label>
+                            <input type="text" th:field="*{numDocumento}" class="form-control" placeholder="Ej. 72839401 / 20123456789" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Cliente / Razón Social:</label>
+                            <input type="text" th:field="*{nombreCliente}" class="form-control" placeholder="Nombre completo" required />
+                        </div>
+                    </div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Dirección del Cliente:</label>
+                            <input type="text" th:field="*{direccionCliente}" class="form-control" placeholder="Av. Principal #123 - Ciudad" required />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Tarjeta 2: Selección del Producto / Motocicleta -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body bg-white rounded p-4">
+                
+                <!-- Botón para abrir el Modal -->
+                <button type="button" class="btn btn-primary fw-bold mb-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalProductos">
+                    <i class="fa-solid fa-magnifying-glass"></i> Seleccionar Producto
+                </button>
+
+                <!-- Formulario Agregar al Carrito -->
+                <form id="form-agregar" th:action="@{/ventas/agregar}" th:object="${productoSeleccionado}" method="post">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Código</label>
+                            <input type="text" id="idProducto" class="form-control bg-light" th:field="*{idProducto}" readonly required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Nombre / Modelo Moto</label>
+                            <input type="text" id="nombre" class="form-control bg-light" th:field="*{nombre}" readonly required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Precio Unitario (S/)</label>
+                            <input type="text" id="precio" class="form-control bg-light" th:field="*{precio}" readonly required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Cantidad</label>
+                            <input type="number" id="cantidad" class="form-control" th:field="*{cantidad}" min="1" value="1" required>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button type="submit" class="btn btn-success fw-bold">
+                                <i class="fa-solid fa-plus"></i> Agregar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tarjeta 3: Detalle de Productos en Carrito -->
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white fw-bold">
+                <i class="fa-solid fa-list-check"></i> Detalle de Productos
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-center">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Precio</th>
+                                <th>Cantidad</th>
+                                <th>Subtotal</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${seleccionados}">
+                                <td class="fw-bold text-secondary" th:text="${item.idProducto}">1</td>
+                                <td class="text-start ps-4 fw-semibold" th:text="${item.nombre}">Pulsar NS200</td>
+                                <td class="text-end pe-4" th:text="'S/ ' + ${#numbers.formatDecimal(item.precio, 1, 2)}">S/ 0.00</td>
+                                <td class="fw-bold text-primary" th:text="${item.cantidad}">1</td>
+                                <td class="text-end pe-4 text-success fw-bold" th:text="'S/ ' + ${#numbers.formatDecimal(item.subtotal, 1, 2)}">S/ 0.00</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <!-- Botón Editar Cantidad (Abre Modal) -->
+                                        <button type="button" class="btn btn-warning btn-sm fw-bold btnEditarCantidad" 
+                                                th:data-id="${item.idProducto}"
+                                                th:data-nombre="${item.nombre}"
+                                                th:data-cantidad="${item.cantidad}">
+                                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                                        </button>
+
+                                        <!-- Formulario Remover -->
+                                        <form th:action="@{/ventas/remover}" method="post" class="d-inline">
+                                            <input type="hidden" name="id" th:value="${item.idProducto}" />
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fa-solid fa-trash"></i> Remover
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(seleccionados)}">
+                                <td colspan="6" class="text-muted py-4">No se han agregado motocicletas al detalle de la venta.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: Seleccionar Producto -->
+    <div class="modal fade" id="modalProductos" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-boxes-stacked"></i> Seleccionar Producto</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive">
+                        <table id="tblSelectorProductos" class="table table-hover align-middle w-100">
+                            <thead class="table-secondary text-center">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="prod : ${productosDisponibles}">
+                                    <td class="text-center fw-bold text-secondary" th:text="${prod.idProducto}"></td>
+                                    <td class="fw-semibold" th:text="${prod.nombre}"></td>
+                                    <td class="text-end fw-bold text-success" th:text="${prod.precio}"></td>
+                                    <td class="text-center fw-bold" th:text="${prod.stock}"></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-primary btn-sm fw-bold btnSeleccionar"
+                                                th:data-id="${prod.idProducto}"
+                                                th:data-nombre="${prod.nombre}"
+                                                th:data-precio="${prod.precio}"
+                                               th:data-stock="${prod.stock}"
+                                               th:disabled="${prod.stock == null or prod.stock <= 0}">
+                                            Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Editar Cantidad del Carrito -->
+    <div class="modal fade" id="modalEditarCantidad" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content shadow">
+                <div class="modal-header bg-warning text-dark fw-bold">
+                    <h5 class="modal-title fs-6"><i class="fa-solid fa-pen-to-square"></i> Editar Cantidad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/ventas/editar-cantidad}" method="post">
+                    <div class="modal-body">
+                        <input type="hidden" id="editIdProducto" name="idProducto" />
+                        <p class="fw-bold mb-2 text-primary" id="editNombreProducto"></p>
+                        <label class="form-label small fw-bold">Nueva Cantidad:</label>
+                        <input type="number" id="editNuevaCantidad" name="nuevaCantidad" class="form-control" min="1" required />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning btn-sm fw-bold">Actualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Boleta Final de Confirmación (Desplegado tras Registrar) -->
+    <th:block th:if="${ventaExito != null}">
+        <div class="modal fade show" id="modalBoletaExito" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);" aria-modal="true">
+            <div class="modal-dialog modal-dialog-centered modal-md">
+                <div class="modal-content shadow-lg border-0">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title fw-bold"><i class="fa-solid fa-circle-check"></i> Venta Registrada con Éxito</h5>
+                        <a th:href="@{/ventas/nuevo}" class="btn-close btn-close-white"></a>
+                    </div>
+                    <div class="modal-body p-4 text-dark">
+                        <div class="text-center mb-3">
+                            <i class="fa-solid fa-receipt fa-3x text-success mb-2"></i>
+                            <h4 class="fw-bold m-0" th:text="${ventaExito.tipoDocumento} + ' N° 001-' + ${ventaExito.idVenta}">Comprobante</h4>
+                            <small class="text-muted" th:text="'Fecha: ' + ${#temporals.format(ventaExito.fechaVenta, 'dd/MM/yyyy HH:mm')}">Fecha</small>
+                        </div>
+                        <hr>
+                        <p class="mb-1"><strong>Cliente:</strong> <span th:text="${ventaExito.nombreCliente}"></span></p>
+                        <p class="mb-1"><strong>DNI / RUC:</strong> <span th:text="${ventaExito.numDocumento}"></span></p>
+                        <p class="mb-1"><strong>Dirección:</strong> <span th:text="${ventaExito.direccionCliente}"></span></p>
+                        <p class="mb-3"><strong>Atendido por:</strong> <span th:text="${ventaExito.usuario.nombreCompleto}"></span></p>
+                        
+                        <div class="p-3 bg-light rounded text-center mb-3 border">
+                            <span class="text-muted fw-bold">TOTAL PAGADO:</span>
+                            <h2 class="text-success fw-bold mb-0" th:text="'S/ ' + ${#numbers.formatDecimal(ventaExito.total, 1, 2)}">S/ 0.00</h2>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir</button>
+                        <a th:href="@{/ventas/nuevo}" class="btn btn-success fw-bold">Aceptar</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- SCRIPTS JQUERY Y DATATABLES -->
+    <script>
+        $(document).ready(function () {
+            // Inicialización de DataTable en el Modal 
+            const table = $('#tblSelectorProductos').DataTable({
+                lengthMenu: [5, 10, 25],
+                pageLength: 5,
+                language: {
+                    url: 'https://cdn.datatables.net/plug-ins/2.0.3/i18n/es-ES.json',
+                    search: "Filtrar :"
+                }
+            });
+
+            // Acción del botón Seleccionar dentro del Modal de Productos
+            $(document).on('click', '.btnSeleccionar', function () {
+                let idProducto = $(this).data('id');
+                let nombre = $(this).data('nombre');
+                let precio = $(this).data('precio');
+                let stock = $(this).data('stock');
+
+                $('#idProducto').val(idProducto);
+                $('#nombre').val(nombre);
+                $('#precio').val(precio);
+                $('#cantidad').val(1);
+                $('#cantidad').attr('max', stock);
+
+                const modal = bootstrap.Modal.getInstance($('#modalProductos')[0]);
+                modal.hide();
+            });
+
+            // Acción para abrir el Modal de Editar Cantidad
+            $(document).on('click', '.btnEditarCantidad', function () {
+                let id = $(this).data('id');
+                let nombre = $(this).data('nombre');
+                let cantidad = $(this).data('cantidad');
+                let stockEnTabla = $('#tblSelectorProductos .btnSeleccionar[data-id="' + id + '"]').data('stock');
+
+                $('#editIdProducto').val(id);
+                $('#editNombreProducto').text(nombre);
+                $('#editNuevaCantidad').val(cantidad);
+                if (stockEnTabla !== undefined) $('#editNuevaCantidad').attr('max', stockEnTabla);
+
+                const modalEdit = new bootstrap.Modal($('#modalEditarCantidad')[0]);
+                modalEdit.show();
+            });
+        });
+    </script>
+</body>
+</html>
